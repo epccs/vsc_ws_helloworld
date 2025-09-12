@@ -1,0 +1,121 @@
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #473727;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+main {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 400px;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+input[type="text"] {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+}
+button[type="submit"] {
+  background: #0078d4;
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+button[type="submit"]:hover {
+  background: #005fa3;
+}
+ul#task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+li.task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f1f3f6;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  transition: background 0.2s;
+}
+.task-timer {
+  font-size: 0.95em;
+  margin-left: 0.7em;
+  color: #0078d4;
+}
+li.task-item.completed {
+  background: #d1e7dd;
+  text-decoration: line-through;
+  color: #6c757d;
+}
+li.task-item.timer-up {
+  background: #ffeaea;
+  color: #d32f2f;
+}
+.task-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+button.action {
+  background: none;
+  border: none;
+  color: #0078d4;
+  font-size: 1.1rem;
+  cursor: pointer;
+  border-radius: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  transition: background 0.2s;
+}
+button.action.up, button.action.down {
+  color: #6c757d;
+}
+button.action:focus {
+  outline: 2px solid #0078d4;
+  background: #e3f2fd;
+}
+button.action.delete {
+  color: #d32f2f;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
+@media (max-width: 500px) {
+  main {
+    padding: 1rem;
+    max-width: 98vw;
+  }
+  input[type="text"], button[type="submit"] {
+    font-size: 0.95rem;
+    padding: 0.6rem;
+  }
+}
