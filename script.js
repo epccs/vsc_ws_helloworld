@@ -1,4 +1,5 @@
-const STORAGE_KEY = 'task_manager_tasks';
+
+const API_URL = 'http://inventree.local:5000/tasks';
 let tasks = [];
 let timersPaused = false;
 let timerInterval = null;
@@ -8,11 +9,11 @@ document.addEventListener('DOMContentLoaded', function () {
   const input = document.getElementById('task-input');
   const list = document.getElementById('task-list');
 
-  function moveTask(from, to) {
+  async function moveTask(from, to) {
     if (to < 0 || to >= tasks.length) return;
     const [moved] = tasks.splice(from, 1);
     tasks.splice(to, 0, moved);
-    saveTasks();
+    await updateAllTasks();
     renderTasks();
   }
 
@@ -25,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return `${h}:${m}:${s}`;
   }
 
-  function renderTasks() {
+  async function renderTasks() {
     list.innerHTML = '';
     const now = Date.now();
     tasks.forEach((task, idx) => {
@@ -57,28 +58,27 @@ document.addEventListener('DOMContentLoaded', function () {
       `;
       li.querySelector('.up').onclick = () => moveTask(idx, idx - 1);
       li.querySelector('.down').onclick = () => moveTask(idx, idx + 1);
-      li.querySelector('.complete').onclick = () => {
+      li.querySelector('.complete').onclick = async () => {
         tasks[idx].completed = !tasks[idx].completed;
-        saveTasks();
+        await updateTask(idx);
         renderTasks();
       };
-      li.querySelector('.delete').onclick = () => {
-        tasks.splice(idx, 1);
-        saveTasks();
+      li.querySelector('.delete').onclick = async () => {
+        await deleteTask(idx);
         renderTasks();
       };
       // Timer input handlers: pause updates on focus/hover, resume on blur/mouseout
       const timerInput = li.querySelector('.timer-input');
       timerInput.onfocus = timerInput.onmouseenter = () => { timersPaused = true; };
       timerInput.onblur = timerInput.onmouseleave = () => { timersPaused = false; updateTimers(); };
-      timerInput.onchange = (e) => {
+      timerInput.onchange = async (e) => {
         let hours = parseFloat(timerInput.value);
         if (isNaN(hours) || hours < 0) hours = 0;
         if (hours > 168) hours = 168;
         tasks[idx].hours = hours;
         tasks[idx].due = Date.now() + hours * 3600 * 1000;
         tasks[idx].timerUp = false;
-        saveTasks();
+        await updateTask(idx);
         renderTasks();
       };
       list.appendChild(li);
@@ -100,15 +100,45 @@ document.addEventListener('DOMContentLoaded', function () {
     renderTasks();
   }
 
-  function saveTasks() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  async function addTask(task) {
+    // Add a single task to backend
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(task)
+    });
+    const newTask = await res.json();
+    tasks.push(newTask);
   }
 
-  function loadTasks() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
+  async function updateTask(idx) {
+    // Update a single task in backend
+    await fetch(`${API_URL}/${idx}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tasks[idx])
+    });
+  }
+
+  async function deleteTask(idx) {
+    // Delete a single task in backend
+    await fetch(`${API_URL}/${idx}`, {
+      method: 'DELETE' });
+    tasks.splice(idx, 1);
+  }
+
+  async function updateAllTasks() {
+    // Re-save all tasks after reorder
+    for (let i = 0; i < tasks.length; i++) {
+      await updateTask(i);
+    }
+  }
+
+  async function loadTasks() {
+    // Load all tasks from backend
     try {
-      const arr = JSON.parse(raw);
+      const res = await fetch(API_URL);
+      const arr = await res.json();
       if (Array.isArray(arr)) {
         tasks = arr.map(t => ({
           text: t.text,
@@ -121,29 +151,29 @@ document.addEventListener('DOMContentLoaded', function () {
     } catch {}
   }
 
-  loadTasks();
-  renderTasks();
-  // Start timer updates every second
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = setInterval(updateTimers, 1000);
-  form.onsubmit = function (e) {
+  // Initial load
+  loadTasks().then(() => {
+    renderTasks();
+    // Start timer updates every second
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(updateTimers, 1000);
+  });
+
+  form.onsubmit = async function (e) {
     e.preventDefault();
     const value = input.value.trim();
     if (value) {
       const now = Date.now();
-      tasks.push({
+      const newTask = {
         text: value,
         completed: false,
         hours: 24,
         due: now + 24 * 3600 * 1000,
         timerUp: false
-      });
+      };
       input.value = '';
-      saveTasks();
+      await addTask(newTask);
       renderTasks();
     }
   };
-
-  loadTasks();
-  renderTasks();
 });

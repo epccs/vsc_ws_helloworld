@@ -31,11 +31,15 @@ sudo docker run hello-world
 ### a. Create a new folder for the backend
 
 ```bash
-mkdir backend
-cd backend
+mkdir vsc_ws_helloworld_backend
+cd vsc_ws_helloworld_backend
 ```
 
 ### b. Create `app.py` (Flask API)
+
+```bash
+nano ./app.py
+```
 
 ```python
 from flask import Flask, request, jsonify
@@ -71,16 +75,20 @@ def add_task():
 @app.route('/tasks/<int:idx>', methods=['PUT'])
 def update_task(idx):
     tasks = load_tasks()
-    tasks[idx] = request.json
-    save_tasks(tasks)
-    return jsonify(tasks[idx])
+    if 0 <= idx < len(tasks):
+        tasks[idx] = request.json
+        save_tasks(tasks)
+        return jsonify(tasks[idx])
+    return jsonify({'error': 'Task not found'}), 404
 
 @app.route('/tasks/<int:idx>', methods=['DELETE'])
 def delete_task(idx):
     tasks = load_tasks()
-    tasks.pop(idx)
-    save_tasks(tasks)
-    return '', 204
+    if 0 <= idx < len(tasks):
+        tasks.pop(idx)
+        save_tasks(tasks)
+        return '', 204
+    return jsonify({'error': 'Task not found'}), 404
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
@@ -88,12 +96,20 @@ if __name__ == '__main__':
 
 ### c. Create `requirements.txt`
 
+```bash
+nano ./requirements.txt
+```
+
 ```TEXT
 flask
 flask-cors
 ```
 
 ### d. Create `Dockerfile`
+
+```bash
+nano ./Dockerfile
+```
 
 ```TEXT
 FROM python:3.11-slim
@@ -107,23 +123,25 @@ CMD ["python", "app.py"]
 ## 2. Build and Run the Backend
 
 ```bash
-cd backend
+cd ~/vsc_ws_helloworld_backend
 sudo docker build -t taskmanager-backend .
 sudo docker run -d -p 5000:5000 --name taskmanager-backend taskmanager-backend
+sudo docker container ls
 ```
 
 ## 3. Test the API
 
-- Visit `http://localhost:5000/tasks` in your browser (should return an empty list)
 - Use tools like Postman or `curl` to test POST/PUT/DELETE requests
+- `curl http://localhost:5000/tasks`
+- `curl http://inventree.local:5000/tasks` from a remote computer (with avahi-daemon installed)  computer
 
 ## 4. Connect Frontend
 
-- Update your frontend JavaScript to use `fetch` calls to `http://localhost:5000/tasks` instead of localStorage.
+- Update your frontend JavaScript to use `fetch` calls to `http://inventree.local:5000/tasks` instead of localStorage.
 - Example:
 
 ```js
-fetch('http://localhost:5000/tasks')
+fetch('http://inventree.local:5000/tasks')
   .then(res => res.json())
   .then(tasks => { /* render tasks */ })
 ```
@@ -134,6 +152,3 @@ fetch('http://localhost:5000/tasks')
 sudo docker stop taskmanager-backend
 sudo docker rm taskmanager-backend
 ```
-
----
-For Django or advanced features (auth, users, database), ask for a more detailed guide!
